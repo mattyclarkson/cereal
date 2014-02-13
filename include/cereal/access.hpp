@@ -242,6 +242,18 @@ namespace cereal
       static auto member_load(Archive & ar, T & t) -> decltype(t.load(ar))
       { t.load(ar); }
 
+      template<class Archive, class T> inline
+      static auto member_save_primitive(Archive &, T const & t) -> decltype(t.save_primitive())
+      { t.save_primitive(); }
+
+      template<class Archive, class T> inline
+      static auto member_save_primitive_non_const(Archive &, T & t) -> decltype(t.save_primitive())
+      { t.save_primitive(); }
+
+      template<class Archive, class T, class U> inline
+      static auto member_load_primitive(Archive &, T & t, U const & u) -> decltype(t.load_primitive(u))
+      { t.load_primitive(u); }
+
       // versioned member serialize
       template<class Archive, class T> inline
       static auto member_serialize(Archive & ar, T & t, const std::uint32_t version ) -> decltype(t.serialize(ar, version))
@@ -279,10 +291,12 @@ namespace cereal
       @ingroup Access */
   enum class specialization
   {
-    member_serialize,          //!< Force the use of a member serialize function
-    member_load_save,          //!< Force the use of a member load/save pair
-    non_member_serialize,      //!< Force the use of a non-member serialize function
-    non_member_load_save       //!< Force the use of a non-member load/save pair
+    member_serialize,              //!< Force the use of a member serialize function
+    member_load_save,              //!< Force the use of a member load/save pair
+    member_load_save_primitive,    //!< Force the use of a member primitive load/save pair
+    non_member_serialize,          //!< Force the use of a non-member serialize function
+    non_member_load_save,          //!< Force the use of a non-member load/save pair
+    non_member_load_save_primitive //!< Force the use of a non-member primitive load/save pair
   };
 
   //! A class used to disambiguate cases where cereal cannot detect a unique way of serializing a class

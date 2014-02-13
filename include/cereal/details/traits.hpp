@@ -196,6 +196,10 @@ namespace cereal
     CEREAL_MAKE_HAS_NON_MEMBER_VERSIONED_TEST(load);
 
     // ######################################################################
+    // Member Load Primitive
+    CEREAL_MAKE_HAS_MEMBER_TEST(load);
+
+    // ######################################################################
     // Member Save
     namespace detail
     {
@@ -346,6 +350,79 @@ namespace cereal
         "cereal detected a non-const type parameter in versioned non-member save.\n"
         "save non-member functions must always pass their types as const" );
     };
+
+    // ######################################################################
+    // Member Save Primitive
+    namespace detail
+    {
+      template <class T, class A>
+      struct has_member_save_primitive_impl
+      {
+        #ifdef CEREAL_OLDER_GCC
+        template <class TT, class AA, class SFINAE = void>
+        struct test : no {};
+        template <class TT, class AA>
+        struct test<TT, AA,
+          typename Void< decltype( cereal::access::member_save_primitive( std::declval<AA&>(), std::declval<TT const &>() ) ) >::type> : yes {};
+        static const bool value = test<T, A>();
+
+        template <class TT, class AA, class SFINAE = void>
+        struct test2 : no {};
+        template <class TT, class AA>
+        struct test2<TT, AA,
+          typename Void< decltype( cereal::access::member_save_primitive_non_const( std::declval<AA&>(), std::declval<typename std::remove_const<TT>::type&>() ) ) >::type> : yes {};
+        static const bool not_const_type = test2<T, A>();
+        #else // NOT CEREAL_OLDER_GCC =========================================
+        template <class TT, class AA>
+        static auto test(int) -> decltype( cereal::access::member_save_primitive( std::declval<AA&>(), std::declval<TT const &>() ), yes());
+        template <class, class>
+        static no test(...);
+        static const bool value = std::is_same<decltype(test<T, A>(0)), yes>::value;
+
+        template <class TT, class AA>
+        static auto test2(int) -> decltype( cereal::access::member_save_primitive_non_const( std::declval<AA &>(), std::declval<typename std::remove_const<TT>::type&>() ), yes());
+        template <class, class>
+        static no test2(...);
+        static const bool not_const_type = std::is_same<decltype(test2<T, A>(0)), yes>::value;
+        #endif // NOT CEREAL_OLDER_GCC
+      };
+    } // end namespace detail
+
+    template <class T, class A>
+    struct has_member_save_primitive : std::integral_constant<bool, detail::has_member_save_primitive_impl<T, A>::value>
+    {
+      typedef typename detail::has_member_save_primitive_impl<T, A> check;
+      static_assert( check::value || !check::not_const_type,
+        "cereal detected a non-const save_primitive.\n"
+        "save_primitive member functions must always be const" );
+    };
+
+    //! Creates a test for whether a non const member function exists
+    /*! This creates a class derived from std::integral_constant that will be true if
+        the type has the proper member function for the given archive. */
+    #ifdef CEREAL_OLDER_GCC
+    template <class T, class A, class SFINAE = void>
+    struct has_member_member_load_primitive : no {};
+
+    template <class T, class A>
+    struct has_member_member_load_primitive<T, A,
+      typename Void< decltype( cereal::access::member_member_load_primitive( std::declval<A&>(), std::declval<T&>() ) ) >::type> : yes {}
+    #else // NOT CEREAL_OLDER_GCC
+    namespace detail
+    {
+      template <class T, class A>
+      struct has_member_member_load_primitive_impl
+      {
+        template <class TT, class AA>
+        static auto test(int) -> decltype( cereal::access::member_member_load_primitive( std::declval<AA&>(), std::declval<TT&>() ), yes());
+        template <class, class>
+        static no test(...);
+        static const bool value = std::is_same<decltype(test<T, A>(0)), yes>::value;
+      };
+    } /* end namespace detail */
+    template <class T, class A>
+    struct has_member_member_load_primitive : std::integral_constant<bool, detail::has_member_member_load_primitive_impl<T, A>::value> {}
+    #endif // NOT CEREAL_OLDER_GCC
 
     // ######################################################################
     template <class T, class InputArchive, class OutputArchive>
