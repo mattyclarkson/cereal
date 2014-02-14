@@ -37,6 +37,7 @@
 
 namespace cereal
 {
+  // ######################################################################
   //! A class that allows cereal to load smart pointers to types that have no default constructor
   /*! If your class does not have a default constructor, cereal will not be able
       to load any smart pointers to it unless you overload LoadAndAllocate
@@ -94,11 +95,13 @@ namespace cereal
     { return std::false_type(); }
   };
 
+  // ######################################################################
   // forward decl for allocate
   //! @cond PRIVATE_NEVERDEFINED
   namespace memory_detail{ template <class Ar, class T> struct LoadAndAllocateLoadWrapper; }
   //! @endcond
 
+  // ######################################################################
   //! Used to allocate types with no default constructor
   /*! When serializing a type that has no default constructor, cereal
       will attempt to call either the class static function load_and_allocate
@@ -205,6 +208,7 @@ namespace cereal
       bool itsValid;
   };
 
+  // ######################################################################
   //! A class that can be made a friend to give cereal access to non public functions
   /*! If you desire non-public serialization functions within a class, cereal can only
       access these if you declare cereal::access a friend.
@@ -226,6 +230,7 @@ namespace cereal
   class access
   {
     public:
+      // ####### Standard Serialization ########################################
       template<class Archive, class T> inline
       static auto member_serialize(Archive & ar, T & t) -> decltype(t.serialize(ar))
       { t.serialize(ar); }
@@ -254,22 +259,19 @@ namespace cereal
       static auto member_load_primitive(Archive &, T & t, U const & u) -> decltype(t.load_primitive(u))
       { t.load_primitive(u); }
 
-      // versioned member serialize
+      // ####### Versioned Serialization #######################################
       template<class Archive, class T> inline
       static auto member_serialize(Archive & ar, T & t, const std::uint32_t version ) -> decltype(t.serialize(ar, version))
       { t.serialize(ar, version); }
 
-      // versioned member save
       template<class Archive, class T> inline
       static auto member_save(Archive & ar, T const & t, const std::uint32_t version ) -> decltype(t.save(ar, version))
       { t.save(ar, version); }
 
-      // versioned member save (non const)
       template<class Archive, class T> inline
       static auto member_save_non_const(Archive & ar, T & t, const std::uint32_t version ) -> decltype(t.save(ar, version))
       { t.save(ar, version); }
 
-      // versioned member load
       template<class Archive, class T> inline
       static auto member_load(Archive & ar, T & t, const std::uint32_t version ) -> decltype(t.load(ar, version))
       { t.load(ar, version); }
@@ -285,6 +287,7 @@ namespace cereal
         }
   };
 
+  // ######################################################################
   //! A specifier used in conjunction with cereal::specialize to disambiguate
   //! serialization in special cases
   /*! @relates specialize
@@ -299,6 +302,7 @@ namespace cereal
     non_member_load_save_primitive //!< Force the use of a non-member primitive load/save pair
   };
 
+  // ######################################################################
   //! A class used to disambiguate cases where cereal cannot detect a unique way of serializing a class
   /*! cereal attempts to figure out which method of serialization (member vs. non-member serialize
       or load/save pair) at compile time.  If for some reason cereal cannot find a non-ambiguous way
@@ -356,6 +360,7 @@ namespace cereal
   template <class Archive, class T, specialization S>
   struct specialize : public std::false_type {};
 
+  // ######################################################################
   //! Convenient macro for performing specialization for all archive types
   /*! This performs specialization for the specific type for all types of archives.
       This macro should be placed at the global namespace.
@@ -370,6 +375,7 @@ namespace cereal
   #define CEREAL_SPECIALIZE_FOR_ALL_ARCHIVES( Type, Specialization )                                \
   namespace cereal { template <class Archive> struct specialize<Archive, Type, Specialization> {}; }
 
+  // ######################################################################
   //! Convenient macro for performing specialization for a single archive type
   /*! This performs specialization for the specific type for a single type of archive.
       This macro should be placed at the global namespace.
@@ -384,5 +390,4 @@ namespace cereal
   #define CEREAL_SPECIALIZE_FOR_ARCHIVE( Archive, Type, Specialization )               \
   namespace cereal { template <> struct specialize<Archive, Type, Specialization> {}; }
 } // namespace cereal
-
 #endif // CEREAL_ACCESS_HPP_
